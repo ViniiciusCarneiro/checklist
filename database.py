@@ -3,21 +3,21 @@ from config import SERVER, DATABASE, DRIVER, TRUSTED_CONNECTION
 
 def conectar_banco():
     try:
-        conn = pyodbc.connect(f'DRIVER={DRIVER};SERVER={SERVER};DATABASE={DATABASE};Trusted_Connection={TRUSTED_CONNECTION};Connection Timeout=120;')
+        conn = pyodbc.connect(f'DRIVER={DRIVER};SERVER={SERVER};DATABASE={DATABASE};Trusted_Connection={TRUSTED_CONNECTION};Connection Timeout=240;')
         return conn
     except Exception as e:
         raise
 def salvar_item(conn, item):
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM items WHERE itemId = ?", (item['itemId'],))
+        cursor.execute("SELECT COUNT(*) FROM Item WHERE itemId = ?", (item['itemId'],))
         exists = cursor.fetchone()[0] > 0
 
         if exists:
             return 0
 
         cursor.execute("""
-            INSERT INTO items (itemId, checklistId, categoryId, name, deletedAt, [order])
+            INSERT INTO Item (itemId, checklistId, categoryId, name, deletedAt, [order])
             VALUES (?, ?, ?, ?, ?, ?)
         """, (item['itemId'], item['checklistId'], item['categoryId'], item['name'], item['deletedAt'], item['order']))
 
@@ -75,5 +75,144 @@ def salvar_action_plan(conn, action_plan):
         conn.commit()
 
         return 1
+    except Exception as e:
+        raise
+
+def salvar_ticket(conn, ticket):
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM Checklist WHERE ChecklistId = ?", (ticket['checklistId'],))
+        exists = cursor.fetchone()[0] > 0
+
+        if exists:
+            return 0
+
+        cursor.execute("""
+            INSERT INTO Checklist (
+                Checklistid, Type, Name, Description, Active, CreatedAt, UpdatedAt, DeletedAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", ticket['checklistId'], ticket['type'], ticket['name'],
+            ticket['description'], ticket['active'], ticket['createdAt'], ticket['updatedAt'], ticket['deletedAt'],)
+        conn.commit()
+
+        return 1
+    except Exception as e:
+        raise
+
+def salvar_evaluation(conn, evaluation):
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM Evaluation WHERE EvaluationId = ?", (evaluation['evaluationId'],))
+        exists = cursor.fetchone()[0] > 0
+
+        if exists:
+            return 0
+
+        cursor.execute("""
+            INSERT INTO Evaluation (
+                EvaluationId, TableStatus, Score, ChecklistId, UnitId, UserId, StartedAt, ConcludedAt, ApprovedAt, TablePlatform,
+                Scheduled, ScheduleStartDate, ScheduleEndDate, FinalComment, SharedTo, CountAttachments, InitialLatitude, InitialLongitude, FinalLatitude, FinalLongitude,
+                CreatedAt, UpdatedAt, DeletedAt 
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", evaluation['evaluationId'], evaluation['status'], evaluation['score'], evaluation['checklistId'],
+            evaluation['unitId'], evaluation['userId'], evaluation['startedAt'], evaluation['concludedAt'], evaluation['approvedAt'], evaluation['platform'], evaluation['scheduled'],
+            evaluation['scheduleStartDate'], evaluation['scheduleEndDate'], evaluation['finalComment'], evaluation['sharedTo'], evaluation['countAttachments'], evaluation['initialLatitude'],
+            evaluation['initialLongitude'], evaluation['finalLatitude'], evaluation['finalLongitude'], evaluation['createdAt'], evaluation['updatedAt'], evaluation['deletedAt'])
+
+        conn.commit()
+
+        return 1
+
+    except Exception as e:
+        raise
+
+def salvar_user(conn, user):
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM Users WHERE UserId = ?", (user['userId'],))
+        exists = cursor.fetchone()[0] > 0
+
+        if exists:
+            return 0
+
+        cursor.execute("""
+            INSERT INTO Users (
+                UserId, Name, Email, Active, UserTypeId, Phone, LanguageId, CountryId, StateId, CreatedAt,
+                UpdatedAt, DeletedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, user['userId'], user['name'], user['email'], user['active'], user['userTypeId'],
+                    user['phone'], user['languageId'], user['countryId'], user['stateId'], user['createdAt'], user['updatedAt'], user['deletedAt'])
+
+        conn.commit()
+
+        return 1
+
+    except Exception as e:
+        raise
+
+def salvar_unit(conn, unit):
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM Units WHERE UnitId = ?", (unit['unitId'],))
+        exists = cursor.fetchone()[0] > 0
+
+        if exists:
+            return 0
+
+        cursor.execute("""
+            INSERT INTO Units (
+                UnitId, Name, Email, Active, CountryId, CreatedAt, UpdatedAt, DeletedAt) VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?)""", unit['unitId'], unit['name'], unit['email'], unit['active'],
+                       unit['countryId'], unit['createdAt'], unit['updatedAt'], unit['deletedAt'])
+        conn.commit()
+
+        return 1
+
+    except Exception as e:
+        raise
+
+def salvar_departamento(conn, departamento):
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM Departamentos WHERE DepartmentId = ?", (departamento['departmentId'],))
+        exists = cursor.fetchone()[0] > 0
+
+        if exists:
+            return 0
+
+        cursor.execute("""
+        INSERT INTO Departamentos (
+            DepartmentId, Name, Active, CreatedAt, UpdatedAt, DeletedAt) VALUES
+            (?, ?, ?, ?, ?, ?)""", departamento['departmentId'], departamento['name'], departamento['active'],
+                       departamento['createdAt'], departamento['updatedAt'], departamento['deletedAt'])
+
+        conn.commit()
+        return 1
+
+    except Exception as e:
+        raise
+
+def salvar_user_type(conn, user_type):
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM UserTypes WHERE UserTypeId = ?", (user_type['userTypeId'],))
+        exists = cursor.fetchone()[0] > 0
+
+        if exists:
+            return 0
+
+        cursor.execute("""
+            INSERT INTO UserTypes (
+                UserTypeId, Name, Active, CreatedAt, UpdatedAt,DeletedAt) VALUES
+                (?, ?, ?, ?, ?, ?)""", user_type['userTypeId'], user_type['name'], user_type['active'],
+                       user_type['createdAt'], user_type['updatedAt'], user_type['deletedAt'])
+
+        conn.commit()
+        return 1
+
     except Exception as e:
         raise
