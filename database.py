@@ -1,5 +1,6 @@
 import pyodbc
 from config import SERVER, DATABASE, DRIVER, TRUSTED_CONNECTION
+from api_client import APIClient
 
 def conectar_banco():
     try:
@@ -143,6 +144,33 @@ def salvar_user(conn, user):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, user['userId'], user['name'], user['email'], user['active'], user['userTypeId'],
                     user['phone'], user['languageId'], user['countryId'], user['stateId'], user['createdAt'], user['updatedAt'], user['deletedAt'])
+
+
+        if user['deletedAt'] is None:
+            api_client = APIClient()
+            departamentos = api_client.buscar_departamentos_por_usuario(user['userId'])
+
+            departamento_vinculado = next((dep['department']['name'] for dep in departamentos if dep['linked']), None)
+            units = api_client.buscar_units_por_usuario(user['userId'])
+
+            units_vinculados = [unit['unit']['name'] for unit in units if unit['linked']]
+
+            if units_vinculados:
+                unidades_vinculadas_str = ", ".join(units_vinculados)
+            else:
+                unidades_vinculadas_str = None
+        else:
+            unidades_vinculadas_str = None
+            departamento_vinculado = None
+
+        if departamento_vinculado or unidades_vinculadas_str:
+            cursor.execute("""
+                UPDATE Users 
+                SET 
+                    Departments = COALESCE(?, Departments),
+                    Units = COALESCE(?, Units)
+                WHERE UserId = ?
+            """, (departamento_vinculado, unidades_vinculadas_str, user['userId']))
 
         conn.commit()
 

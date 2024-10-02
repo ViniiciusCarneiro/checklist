@@ -8,6 +8,7 @@ from config import CHECKLIST_API_TOKEN
 class APIClient:
     def __init__(self):
         self.connection = http.client.HTTPSConnection("api-analytics.checklistfacil.com.br")
+        self.connectionv2 = http.client.HTTPSConnection("integration.checklistfacil.com.br")
         self.token = CHECKLIST_API_TOKEN
 
     def get_items(self, page=1, deletedAt='gte', limit=1000):
@@ -325,4 +326,39 @@ class APIClient:
         return all_user_types
 
 
+    def buscar_departamentos_por_usuario(self, user_id):
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.token}"
+            }
 
+            endpoint = f"/v2/users/{user_id}/departments?page=1&limit=100"
+
+            self.connectionv2.request("GET", endpoint, "", headers)
+            response = self.connectionv2.getresponse()
+
+            if response.status != 200:
+                return []
+
+            data = json.loads(response.read().decode('utf-8'))
+
+            return data.get('data', [])
+
+    def buscar_units_por_usuario(self, user_id):
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.token}"
+        }
+
+        endpoint = f"/v2/users/{user_id}/units?page=1&limit=100"
+
+        self.connectionv2.request("GET", endpoint, "", headers)
+
+        response = self.connectionv2.getresponse()
+
+        if response.status != 200:
+            return []
+
+        data = json.loads(response.read().decode('utf-8'))
+        return data.get('data', [])
